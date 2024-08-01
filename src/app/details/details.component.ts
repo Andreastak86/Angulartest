@@ -4,13 +4,19 @@ import { ActivatedRoute } from "@angular/router";
 import { HousingService } from "../housing.service";
 import { HousingLocation } from "../housinglocation";
 import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
+
 @Component({
     selector: "app-details",
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule],
     template: `
         <article>
-            <img class="listing-photo" [src]="housingLocation?.photo" />
+            <img
+                class="listing-photo"
+                [src]="housingLocation?.photo"
+                alt="Exterior photo of {{ housingLocation?.name }}"
+                crossorigin
+            />
             <section class="listing-description">
                 <h2 class="listing-heading">{{ housingLocation?.name }}</h2>
                 <p class="listing-location">
@@ -21,10 +27,10 @@ import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
                 <h2 class="section-heading">About this housing location</h2>
                 <ul>
                     <li>
-                        units available: {{ housingLocation?.availableUnits }}
+                        Units available: {{ housingLocation?.availableUnits }}
                     </li>
                     <li>
-                        Does this location have a wifi:
+                        Does this location have wifi:
                         {{ housingLocation?.wifi }}
                     </li>
                     <li>
@@ -36,18 +42,20 @@ import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
             <section class="listing-apply">
                 <h2 class="section-heading">Apply now to live here</h2>
                 <form [formGroup]="applyForm" (submit)="submitApplication()">
-                    <label for="first-name">First name</label>
+                    <label for="first-name">First Name</label>
                     <input
                         id="first-name"
                         type="text"
                         formControlName="firstName"
                     />
-                    <label id="last-name-label">Last name</label>
+
+                    <label for="last-name">Last Name</label>
                     <input
                         id="last-name"
                         type="text"
                         formControlName="lastName"
                     />
+
                     <label for="email">Email</label>
                     <input id="email" type="email" formControlName="email" />
                     <button type="submit" class="primary">Apply now</button>
@@ -61,6 +69,7 @@ export class DetailsComponent {
     route: ActivatedRoute = inject(ActivatedRoute);
     housingService = inject(HousingService);
     housingLocation: HousingLocation | undefined;
+
     applyForm = new FormGroup({
         firstName: new FormControl(""),
         lastName: new FormControl(""),
@@ -68,10 +77,21 @@ export class DetailsComponent {
     });
 
     constructor() {
-        const housingLocationId = Number(this.route.snapshot.params["id"]);
-        this.housingLocation =
-            this.housingService.getHousingLocationById(housingLocationId);
+        const housingLocationId = parseInt(
+            this.route.snapshot.params["id"],
+            10
+        );
+        this.housingService
+            .getHousingLocationById(housingLocationId)
+            .then((housingLocation) => {
+                this.housingLocation = housingLocation;
+                console.log("Loaded housing location:", this.housingLocation);
+            })
+            .catch((error) => {
+                console.error("Error loading housing location:", error);
+            });
     }
+
     submitApplication() {
         this.housingService.submitApplication(
             this.applyForm.value.firstName ?? "",
